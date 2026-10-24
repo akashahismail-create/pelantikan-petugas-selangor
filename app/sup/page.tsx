@@ -21,12 +21,7 @@ export default function SupPage() {
     setLoading(true); setErr('')
     try {
       const kodUpper = kod.trim().toUpperCase()
-      const { data, error } = await supabase
-        .from('sekolah_master')
-        .select('*')
-        .eq('kod_sekolah', kodUpper)
-        .eq('password', pass.trim())
-        .single()
+      const { data, error } = await supabase.from('sekolah_master').select('*').eq('kod_sekolah', kodUpper).eq('password', pass.trim()).single()
       if (error || !data) throw new Error('Kod ' + kodUpper + ' atau Password ' + pass + ' salah. Cuba BEA0091 / 1')
       setSekolah(data)
       if (data.senarai_pusat) {
@@ -38,41 +33,42 @@ export default function SupPage() {
       }
       const { data: guruData } = await supabase.from('guru_master').select('*').eq('kod_sekolah', kodUpper).order('nama_guru')
       setGuruList(guruData || [])
-    } catch (e: any) {
-      setErr(e.message)
-    } finally {
-      setLoading(false)
-    }
+    } catch (e: any) { setErr(e.message) } finally { setLoading(false) }
   }
 
   if (sekolah) {
     return (
-      <div className="min-h-screen bg-slate-100 p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="bg-white p-6 rounded-2xl shadow border-l-4 border-blue-800">
-            <div className="flex justify-between">
-              <div>
-                <h2 className="text-xl font-extrabold text-blue-900">{sekolah.password}. {sekolah.nama_sekolah} ({sekolah.kod_sekolah})</h2>
-                <p className="text-sm text-gray-600 mt-1">{sekolah.kod_ppd} {sekolah.ppd} | Password {sekolah.password} dari 369 | Bil Pusat {sekolah.bil_pusat}</p>
-                <div className="mt-3 flex gap-2 flex-wrap">
-                  {sekolah.senarai_pusat?.split(',').map((p: string) => (
-                    <span key={p} className="px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-xs font-mono font-bold border">{p.trim().toUpperCase()}</span>
-                  ))}
-                </div>
+      <div style={{ minHeight: '100vh', background: '#f1f5f9', padding: 20, fontFamily: 'Arial' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ background: 'white', padding: 20, borderRadius: 12, borderLeft: '6px solid #0d47a1', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between' }}>
+            <div>
+              <h2 style={{ margin: 0, color: '#0d47a1', fontWeight: 900 }}>{sekolah.password}. {sekolah.nama_sekolah} ({sekolah.kod_sekolah})</h2>
+              <p style={{ margin: '6px 0', fontSize: 13, color: '#555' }}>{sekolah.kod_ppd} {sekolah.ppd} | Password {sekolah.password} dari 369 | Bil Pusat {sekolah.bil_pusat}</p>
+              <div style={{ marginTop: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {sekolah.senarai_pusat?.split(',').map((p: string) => (
+                  <span key={p} style={{ background: '#dbeafe', color: '#1e40af', padding: '4px 10px', borderRadius: 20, fontSize: 11, fontFamily: 'monospace', fontWeight: 'bold', border: '1px solid #bfdbfe' }}>{p.trim().toUpperCase()}</span>
+                ))}
               </div>
-              <button onClick={() => { setSekolah(null); setKod(''); setPass(''); }} className="h-fit bg-red-50 text-red-700 px-4 py-2 rounded-lg border text-sm font-bold">Log Keluar</button>
             </div>
+            <button onClick={() => setSekolah(null)} style={{ height: 36, background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '0 16px', borderRadius: 8, fontWeight: 'bold', cursor: 'pointer' }}>Keluar</button>
           </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white p-5 rounded-xl shadow border">
-              <h3 className="font-bold text-blue-900 mb-3">Senarai Pusat ({pusatList.length}) - UPPER BA BK</h3>
-              <div className="overflow-auto max-h-[500px]">
-                <table className="w-full text-sm"><thead className="bg-gray-50 sticky top-0"><tr><th className="p-2 text-left">No Pusat</th><th className="p-2 text-left">Nama</th></tr></thead><tbody>{pusatList.map((p: any) => <tr key={p.no_pusat} className="border-b hover:bg-gray-50"><td className="p-2 font-mono font-bold">{p.no_pusat}</td><td className="p-2">{p.nama_pusat}</td></tr>)}</tbody></table>
-              </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 20 }}>
+            <div style={{ background: 'white', padding: 16, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+              <h3 style={{ margin: '0 0 12px 0', color: '#0d47a1', fontWeight: 'bold' }}>Senarai Pusat ({pusatList.length})</h3>
+              <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f8fafc', textAlign: 'left' }}><th style={{ padding: 8, borderBottom: '1px solid #e2e8f0' }}>No Pusat</th><th style={{ padding: 8, borderBottom: '1px solid #e2e8f0' }}>Nama Pusat</th></tr></thead>
+                <tbody>{pusatList.map((p: any) => <tr key={p.no_pusat} style={{ borderBottom: '1px solid #f1f5f9' }}><td style={{ padding: 8, fontFamily: 'monospace', fontWeight: 'bold' }}>{p.no_pusat}</td><td style={{ padding: 8 }}>{p.nama_pusat}</td></tr>)}</tbody>
+              </table>
             </div>
-            <div className="bg-white p-5 rounded-xl shadow border">
-              <h3 className="font-bold text-blue-900 mb-3">Guru {sekolah.kod_sekolah} ({guruList.length})</h3>
-              <div className="overflow-auto max-h-[500px]"><table className="w-full text-sm"><thead className="bg-gray-50 sticky top-0"><tr><th className="p-2 text-left">Nama</th><th className="p-2 text-left">IC</th></tr></thead><tbody>{guruList.map((g: any) => <tr key={g.id} className="border-b hover:bg-gray-50"><td className="p-2">{g.nama_guru}</td><td className="p-2 font-mono text-xs">{g.ic_guru}</td></tr>)}</tbody></table></div>
+            <div style={{ background: 'white', padding: 16, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+              <h3 style={{ margin: '0 0 12px 0', color: '#0d47a1', fontWeight: 'bold' }}>Senarai Guru ({guruList.length})</h3>
+              <div style={{ maxHeight: 500, overflow: 'auto' }}>
+                <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ background: '#f8fafc', textAlign: 'left' }}><th style={{ padding: 8, borderBottom: '1px solid #e2e8f0' }}>Nama Guru</th><th style={{ padding: 8, borderBottom: '1px solid #e2e8f0' }}>IC</th></tr></thead>
+                  <tbody>{guruList.map((g: any) => <tr key={g.id} style={{ borderBottom: '1px solid #f1f5f9' }}><td style={{ padding: 8 }}>{g.nama_guru}</td><td style={{ padding: 8, fontFamily: 'monospace', fontSize: 11 }}>{g.ic_guru}</td></tr>)}</tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -81,27 +77,35 @@ export default function SupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#eef2f7] flex items-center justify-center p-4">
-      <div className="w-full max-w-[420px] bg-white rounded-[20px] shadow-2xl border p-8">
-        <div className="text-center mb-6">
-          <div className="w-14 h-14 bg-yellow-400 rounded-full mx-auto mb-3 flex items-center justify-center font-black text-[10px] border-2 border-yellow-600">JATA</div>
-          <h1 className="text-[13px] font-black text-blue-900 tracking-wide">JABATAN PENDIDIKAN NEGERI SELANGOR</h1>
-          <h2 className="text-xl font-black text-blue-900 mt-4">LOG MASUK SUP</h2>
-          <p className="text-[11px] text-gray-500 mt-1 leading-tight">Guna Kod Sekolah tambah Password Lama 1 hingga 369<br/>BA Klang 1 hingga 49 hingga BK Petaling Utama 334 hingga 369<br/>Kod Pusat dah fix UPPER BA049, BK550 dll</p>
+    <div style={{ minHeight: '100vh', background: '#eef2f7', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, fontFamily: 'Arial, sans-serif' }}>
+      <div style={{ width: '100%', maxWidth: 420, background: 'white', borderRadius: 20, boxShadow: '0 20px 40px rgba(0,0,0,0.15)', border: '1px solid #e2e8f0', padding: 32 }}>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <div style={{ width: 56, height: 56, background: '#facc15', borderRadius: '50%', margin: '0 auto 12px auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 10, border: '2px solid #ca8a04' }}>JATA</div>
+          <h1 style={{ fontSize: 12, fontWeight: 900, color: '#0d47a1', margin: 0, letterSpacing: 0.5 }}>JABATAN PENDIDIKAN NEGERI SELANGOR</h1>
+          <h2 style={{ fontSize: 20, fontWeight: 900, color: '#0d47a1', margin: '16px 0 0 0' }}>LOG MASUK SUP</h2>
+          <p style={{ fontSize: 11, color: '#64748b', marginTop: 6, lineHeight: 1.4 }}>Guna Kod Sekolah tambah Password Lama 1 hingga 369<br/>BA Klang 1 hingga 49 hingga BK Petaling Utama 334 hingga 369<br/>Kod Pusat dah fix UPPER BA049, BK550</p>
         </div>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div><label className="text-xs font-bold text-gray-700">Kod Sekolah (Contoh BEA0091)</label><input value={kod} onChange={e => setKod(e.target.value.toUpperCase())} placeholder="BEA0091" className="w-full mt-1 p-3 border border-gray-300 rounded-xl font-mono uppercase focus:ring-2 focus:ring-blue-500 outline-none" required /></div>
-          <div><label className="text-xs font-bold text-gray-700">Kata Laluan / Password (1 hingga 369)</label><input value={pass} onChange={e => setPass(e.target.value)} placeholder="1" className="w-full mt-1 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required /></div>
-          {err && <div className="text-xs text-red-700 bg-red-50 p-3 rounded-xl border border-red-200">{err}</div>}
-          <button disabled={loading} className="w-full bg-[#0d47a1] text-white p-3.5 rounded-xl font-bold hover:bg-blue-900 transition disabled:opacity-50">{loading ? 'Menyemak 369 sekolah...' : 'Log Masuk SUP'}</button>
+
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 'bold', color: '#334155' }}>Kod Sekolah (Contoh BEA0091)</label>
+            <input value={kod} onChange={e => setKod(e.target.value.toUpperCase())} placeholder="BEA0091" style={{ width: '100%', marginTop: 4, padding: 12, border: '1px solid #cbd5e1', borderRadius: 12, fontFamily: 'monospace', textTransform: 'uppercase', outline: 'none', boxSizing: 'border-box' }} required />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 'bold', color: '#334155' }}>Kata Laluan / Password (1 hingga 369)</label>
+            <input value={pass} onChange={e => setPass(e.target.value)} placeholder="1" style={{ width: '100%', marginTop: 4, padding: 12, border: '1px solid #cbd5e1', borderRadius: 12, outline: 'none', boxSizing: 'border-box' }} required />
+          </div>
+          {err && <div style={{ fontSize: 12, color: '#b91c1c', background: '#fef2f2', padding: 10, borderRadius: 10, border: '1px solid #fecaca' }}>{err}</div>}
+          <button disabled={loading} style={{ width: '100%', background: '#0d47a1', color: 'white', padding: 14, borderRadius: 12, fontWeight: 'bold', border: 'none', cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>{loading ? 'Menyemak...' : 'Log Masuk SUP'}</button>
         </form>
-        <div className="mt-5 p-3 bg-slate-50 rounded-xl text-[11px] border">
-          <p className="font-bold mb-2 text-gray-700">Demo Login (dah siap fix UPPER):</p>
-          <button onClick={() => { setKod('BEA0091'); setPass('1'); }} className="w-full text-left p-2.5 bg-white rounded-lg border hover:bg-blue-50 mb-1.5 font-mono">BEA0091 / 1 - SMK RAJA MAHADI (BA001) 2 pusat BA049 BA050</button>
-          <button onClick={() => { setKod('BGAJ003'); setPass('360'); }} className="w-full text-left p-2.5 bg-white rounded-lg border hover:bg-blue-50 mb-1.5 font-mono">BGAJ003 / 360 - SEKOLAH SRI BESTARI BK550</button>
-          <button onClick={() => { setKod('ZZZ0022'); setPass('369'); }} className="w-full text-left p-2.5 bg-white rounded-lg border hover:bg-blue-50 font-mono">ZZZ0022 / 369 - SM BESTARI ASIA PACIFIC BK566 (terakhir)</button>
+
+        <div style={{ marginTop: 20, padding: 12, background: '#f8fafc', borderRadius: 12, fontSize: 11, border: '1px solid #e2e8f0' }}>
+          <p style={{ fontWeight: 'bold', margin: '0 0 8px 0', color: '#334155' }}>Demo Login (dah siap fix UPPER):</p>
+          <button onClick={() => { setKod('BEA0091'); setPass('1'); }} style={{ width: '100%', textAlign: 'left', padding: 10, background: 'white', borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 6, fontFamily: 'monospace', cursor: 'pointer' }}>BEA0091 / 1 - SMK RAJA MAHADI (BA001) 2 pusat BA049 BA050</button>
+          <button onClick={() => { setKod('BGAJ003'); setPass('360'); }} style={{ width: '100%', textAlign: 'left', padding: 10, background: 'white', borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 6, fontFamily: 'monospace', cursor: 'pointer' }}>BGAJ003 / 360 - SRI BESTARI BK550</button>
+          <button onClick={() => { setKod('ZZZ0022'); setPass('369'); }} style={{ width: '100%', textAlign: 'left', padding: 10, background: 'white', borderRadius: 8, border: '1px solid #e2e8f0', fontFamily: 'monospace', cursor: 'pointer' }}>ZZZ0022 / 369 - BESTARI ASIA PACIFIC BK566</button>
         </div>
-        <div className="mt-4 text-center"><a href="/" className="text-xs text-blue-700 font-bold hover:underline">← Kembali Home</a></div>
+        <div style={{ marginTop: 16, textAlign: 'center' }}><a href="/" style={{ fontSize: 12, color: '#1d4ed8', fontWeight: 'bold' }}>Kembali Home</a></div>
       </div>
     </div>
   )
