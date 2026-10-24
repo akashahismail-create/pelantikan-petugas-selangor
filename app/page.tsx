@@ -1,65 +1,104 @@
 'use client'
+import { useState } from 'react'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+const PPD_LIST = [
+  { kod: 'BA', nama: 'KLANG', count: 49, range: '1-49' },
+  { kod: 'BB', nama: 'KUALA LANGAT', count: 23, range: '50-72' },
+  { kod: 'BC', nama: 'KUALA SELANGOR', count: 27, range: '73-99' },
+  { kod: 'BD', nama: 'HULU LANGAT', count: 64, range: '100-163' },
+  { kod: 'BE', nama: 'HULU SELANGOR', count: 22, range: '164-185' },
+  { kod: 'BF', nama: 'SABAK BERNAM', count: 21, range: '186-206' },
+  { kod: 'BG', nama: 'GOMBAK', count: 46, range: '207-252' },
+  { kod: 'BH', nama: 'PETALING PERDANA', count: 62, range: '253-314' },
+  { kod: 'BJ', nama: 'SEPANG', count: 19, range: '315-333' },
+  { kod: 'BK', nama: 'PETALING UTAMA', count: 36, range: '334-369' },
+]
+
 export default function Home() {
+  const [showPPD, setShowPPD] = useState(false)
+  const [showSekolah, setShowSekolah] = useState(false)
+  const [selectedPPD, setSelectedPPD] = useState<any>(null)
+  const [sekolahList, setSekolahList] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const handleSelectPPD = async (ppd: any) => {
+    setSelectedPPD(ppd)
+    setShowPPD(false)
+    setLoading(true)
+    setShowSekolah(true)
+    const { data } = await supabase.from('sekolah_master').select('*').eq('kod_ppd', ppd.kod).order('password', { ascending: true })
+    setSekolahList(data || [])
+    setLoading(false)
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #eef2f7 0%, #dbeafe 100%)', padding: 20, fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-        
-        {/* HEADER */}
-        <div style={{ background: 'white', borderRadius: 20, padding: 28, boxShadow: '0 10px 30px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', textAlign: 'center', borderTop: '6px solid #0d47a1' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 16 }}>
-            <div style={{ width: 60, height: 60, background: '#facc15', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 11, border: '3px solid #ca8a04', boxShadow: '0 4px 10px rgba(0,0,0,0.15)' }}>JATA</div>
-            <div style={{ textAlign: 'left' }}>
-              <h1 style={{ fontSize: 13, fontWeight: 900, color: '#0d47a1', margin: 0, letterSpacing: 0.5 }}>JABATAN PENDIDIKAN NEGERI SELANGOR</h1>
-              <p style={{ fontSize: 11, color: '#64748b', margin: '2px 0 0 0' }}>Kementerian Pendidikan Malaysia</p>
+    <div style={{ minHeight: '100vh', background: '#f5f7fa', fontFamily: 'Arial, sans-serif' }}>
+      <div style={{ background: '#0d47a1', color: 'white', padding: 24, textAlign: 'center' }}>
+        <div style={{ width: 80, height: 80, background: '#facc15', borderRadius: '50%', margin: '0 auto 12px auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', fontWeight: 900, fontSize: 10, border: '3px solid #ca8a04' }}>JATA NEGARA</div>
+        <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>JABATAN PENDIDIKAN NEGERI SELANGOR</h1>
+        <p style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>KEMENTERIAN PENDIDIKAN MALAYSIA</p>
+        <div style={{ background: 'white', color: '#0d47a1', marginTop: 16, padding: '8px 16px', fontWeight: 900, letterSpacing: 1, fontSize: 12, display: 'inline-block', borderRadius: 6 }}>SISTEM PELANTIKAN PETUGAS SPM 2026 - Password 1-369 (BA-&gt;BK)</div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginTop: 48, flexWrap: 'wrap', padding: '0 16px' }}>
+        <button onClick={() => window.location.href='/sup'} style={{ background: '#1976d2', color: 'white', padding: '24px 48px', borderRadius: 16, fontWeight: 900, fontSize: 20, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }}>
+          SUP<br/><span style={{ fontSize: 10, fontWeight: 400 }}>369 Sekolah</span>
+        </button>
+        <button onClick={() => setShowPPD(true)} style={{ background: '#1976d2', color: 'white', padding: '24px 48px', borderRadius: 16, fontWeight: 900, fontSize: 20, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }}>
+          PPD<br/><span style={{ fontSize: 10, fontWeight: 400 }}>10 PPD</span>
+        </button>
+        <button onClick={() => window.location.href='/jpns'} style={{ background: '#1976d2', color: 'white', padding: '24px 48px', borderRadius: 16, fontWeight: 900, fontSize: 20, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }}>
+          JPN<br/><span style={{ fontSize: 10, fontWeight: 400 }}>Admin</span>
+        </button>
+      </div>
+
+      <div style={{ maxWidth: 700, margin: '40px auto 0 auto', background: 'white', padding: 16, borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontSize: 12, border: '1px solid #e2e8f0' }}>
+        <p style={{ fontWeight: 900, margin: '0 0 6px 0' }}>Info Password SUP (column password lama):</p>
+        <p style={{ margin: 0, lineHeight: 1.5, color: '#475569' }}>BA Klang = 1-49 (BEA0091 SMK RAJA MAHADI = 1), BK Petaling Utama = 334-369 (ZZZ0022 SM BESTARI ASIA PACIFIC = 369). Kod pusat dah UPPER BA049 etc.</p>
+      </div>
+
+      {showPPD && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16 }} onClick={() => setShowPPD(false)}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ fontWeight: 900, color: '#1e40af', margin: 0, fontSize: 14 }}>PILIH DAERAH / PPD (BA-&gt;BK)</h2>
+              <button onClick={() => setShowPPD(false)} style={{ fontWeight: 900, border: '1px solid #e2e8f0', background: '#f8fafc', padding: '4px 10px', borderRadius: 6, cursor: 'pointer' }}>X</button>
+            </div>
+            <div style={{ maxHeight: 400, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
+              {PPD_LIST.map(ppd => (
+                <button key={ppd.kod} onClick={() => handleSelectPPD(ppd)} style={{ width: '100%', textAlign: 'left', padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontWeight: 'bold', fontSize: 13 }}>{ppd.kod} - {ppd.nama}</span>
+                  <span style={{ fontSize: 10, background: '#dbeafe', padding: '2px 8px', borderRadius: 10 }}>{ppd.range} ({ppd.count})</span>
+                </button>
+              ))}
             </div>
           </div>
-          <h2 style={{ fontSize: 26, fontWeight: 900, color: '#0f172a', margin: '16px 0 8px 0', lineHeight: 1.2 }}>SISTEM PELANTIKAN PETUGAS SPM 2026</h2>
-          <p style={{ fontSize: 12, color: '#475569', margin: 0 }}>Pengurusan Pelantikan Pengawas, Ketua Pengawas & Petugas Peperiksaan SPM Negeri Selangor</p>
-          <div style={{ marginTop: 16, display: 'inline-flex', gap: 8, background: '#f1f5f9', padding: '6px 14px', borderRadius: 20, fontSize: 10, color: '#334155', border: '1px solid #e2e8f0' }}>
-            <span>✓ Kod Pusat UPPER BA049 BK550</span><span>•</span><span>✓ Password 1-369</span><span>•</span><span>✓ 369 Sekolah</span>
+        </div>
+      )}
+
+      {showSekolah && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16 }} onClick={() => setShowSekolah(false)}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 500 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ fontWeight: 900, color: '#1e40af', margin: 0, fontSize: 13 }}>SEKOLAH - {selectedPPD?.nama} ({selectedPPD?.kod}) Password {selectedPPD?.range}</h2>
+              <button onClick={() => setShowSekolah(false)} style={{ fontWeight: 900, border: '1px solid #e2e8f0', background: '#f8fafc', padding: '4px 10px', borderRadius: 6, cursor: 'pointer' }}>X</button>
+            </div>
+            <div style={{ maxHeight: 400, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
+              {loading ? <p>Loading 369 sekolah...</p> : sekolahList.map((s) => (
+                <button key={s.id} onClick={() => window.location.href=`/sup?kod=${s.kod_sekolah}&p=${s.password}`} style={{ width: '100%', textAlign: 'left', padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: 12 }}>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{s.password}. {s.kod_sekolah}</span> - {s.nama_sekolah}<br/><span style={{ fontSize: 10, color: '#64748b' }}>{s.bil_pusat} pusat: {s.senarai_pusat}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-
-        {/* 4 CARDS */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 24 }}>
-          <a href="/jpns" style={{ textDecoration: 'none', background: 'linear-gradient(135deg, #0d47a1, #1e40af)', color: 'white', padding: 24, borderRadius: 18, boxShadow: '0 10px 20px rgba(13,71,161,0.3)', display: 'block' }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🏛️</div>
-            <div style={{ fontWeight: 900, fontSize: 16 }}>JPNS LOGIN</div>
-            <div style={{ fontSize: 11, opacity: 0.9, marginTop: 4 }}>Jabatan Pendidikan Negeri Selangor - Pentadbir Negeri</div>
-            <div style={{ marginTop: 12, fontSize: 10, background: 'rgba(255,255,255,0.2)', display: 'inline-block', padding: '4px 10px', borderRadius: 20 }}>Masuk →</div>
-          </a>
-          <a href="/ppd" style={{ textDecoration: 'none', background: 'linear-gradient(135deg, #15803d, #16a34a)', color: 'white', padding: 24, borderRadius: 18, boxShadow: '0 10px 20px rgba(21,128,61,0.3)', display: 'block' }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🏢</div>
-            <div style={{ fontWeight: 900, fontSize: 16 }}>PPD LOGIN</div>
-            <div style={{ fontSize: 11, opacity: 0.9, marginTop: 4 }}>Pejabat Pendidikan Daerah - 10 PPD Selangor</div>
-            <div style={{ marginTop: 12, fontSize: 10, background: 'rgba(255,255,255,0.2)', display: 'inline-block', padding: '4px 10px', borderRadius: 20 }}>Masuk →</div>
-          </a>
-          <a href="/sup" style={{ textDecoration: 'none', background: 'linear-gradient(135deg, #b45309, #d97706)', color: 'white', padding: 24, borderRadius: 18, boxShadow: '0 10px 20px rgba(180,83,9,0.3)', display: 'block', border: '2px solid #fbbf24' }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🎓</div>
-            <div style={{ fontWeight: 900, fontSize: 16 }}>SUP LOGIN</div>
-            <div style={{ fontSize: 11, opacity: 0.95, marginTop: 4, fontWeight: 'bold' }}>Pengetua / Guru Besar - Kod Sekolah BEA0091 Password 1</div>
-            <div style={{ marginTop: 12, fontSize: 10, background: 'white', color: '#b45309', display: 'inline-block', padding: '6px 14px', borderRadius: 20, fontWeight: 900 }}>★ SUDAH SIAP CANTIK →</div>
-          </a>
-          <a href="/pusat" style={{ textDecoration: 'none', background: 'linear-gradient(135deg, #7e22ce, #a855f7)', color: 'white', padding: 24, borderRadius: 18, boxShadow: '0 10px 20px rgba(126,34,206,0.3)', display: 'block' }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>📍</div>
-            <div style={{ fontWeight: 900, fontSize: 16 }}>PUSAT LOGIN</div>
-            <div style={{ fontSize: 11, opacity: 0.9, marginTop: 4 }}>Ketua Pusat Peperiksaan - Kod Pusat BA049 BK550</div>
-            <div style={{ marginTop: 12, fontSize: 10, background: 'rgba(255,255,255,0.2)', display: 'inline-block', padding: '4px 10px', borderRadius: 20 }}>Masuk →</div>
-          </a>
-        </div>
-
-        {/* INFO */}
-        <div style={{ marginTop: 24, background: 'white', borderRadius: 16, padding: 20, border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
-          <h4 style={{ margin: '0 0 10px 0', fontSize: 13, fontWeight: 900, color: '#0f172a' }}>Maklumat Sistem</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, fontSize: 11, color: '#475569' }}>
-            <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10, border: '1px solid #f1f5f9' }}><b style={{ color: '#0d47a1' }}>369 Sekolah</b><br/>BA Klang 1-49 hingga BK Petaling Utama 334-369</div>
-            <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10, border: '1px solid #f1f5f9' }}><b style={{ color: '#15803d' }}>Kod Pusat UPPER</b><br/>BA049, BA050, BK550 - Auto uppercase fix</div>
-            <div style={{ background: '#f8fafc', padding: 12, borderRadius: 10, border: '1px solid #f1f5f9' }}><b style={{ color: '#b45309' }}>Demo SUP</b><br/>BEA0091 / 1 - SMK RAJA MAHADI 2 pusat</div>
-          </div>
-          <div style={{ marginTop: 16, textAlign: 'center', fontSize: 10, color: '#94a3b8' }}>© 2026 Jabatan Pendidikan Negeri Selangor - Sistem Pelantikan Petugas SPM - Dibangunkan untuk Kegunaan Rasmi</div>
-        </div>
-
-      </div>
+      )}
     </div>
   )
 }
