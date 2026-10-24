@@ -1,6 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export default function SupPage() {
   const [kod, setKod] = useState('')
@@ -23,24 +27,27 @@ export default function SupPage() {
     setLoading(true); setErr('')
     try {
       const kodUpper = kod.trim().toUpperCase()
+      const passTrim = pass.toString().trim()
       const { data, error } = await supabase
         .from('sekolah_master')
         .select('*')
         .eq('kod_sekolah', kodUpper)
-        .eq('password', pass.toString().trim())
+        .eq('password', passTrim)
         .single()
       
-      if (error || !data) throw new Error('Kod ' + kodUpper + ' / Password ' + pass + ' salah. Password = 1 hingga 369 BA ke BK. Contoh BEA0091=1')
+      if (error || !data) throw new Error('Kod ' + kodUpper + ' / Password ' + passTrim + ' salah. Password 1 hingga 369')
       
       setSekolah(data)
 
       if (data.senarai_pusat) {
         const list = data.senarai_pusat.split(',').map((s:string)=>s.trim().toUpperCase()).filter(Boolean)
-        const { data: pusatData } = await supabase
-          .from('pusat_master')
-          .select('*')
-          .in('no_pusat', list)
-        setPusatList(pusatData || [])
+        if(list.length>0){
+          const { data: pusatData } = await supabase
+            .from('pusat_master')
+            .select('*')
+            .in('no_pusat', list)
+          setPusatList(pusatData || [])
+        }
       }
 
       const { data: guruData } = await supabase
@@ -59,35 +66,33 @@ export default function SupPage() {
 
   if (sekolah) {
     return (
-      <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="bg-white p-6 rounded-xl shadow border flex justify-between items-start">
+      <div className="min-h-screen bg-slate-50 p-4">
+        <div className="max-w-6xl mx-auto space-y-4">
+          <div className="bg-white p-4 rounded-xl shadow border flex justify-between">
             <div>
-              <h2 className="text-xl font-bold text-[#0d47a1]">{sekolah.password}. {sekolah.nama_sekolah} ({sekolah.kod_sekolah})</h2>
-              <p className="text-sm text-slate-600">{sekolah.kod_ppd} - {sekolah.ppd} | Password: {sekolah.password} / 369 (BA 1 hingga BK 369) | Bil Pusat: {sekolah.bil_pusat}</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {sekolah.senarai_pusat?.split(',').map((p:string)=><span key={p} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-mono font-bold">{p.trim().toUpperCase()}</span>)}
+              <h2 className="font-bold text-blue-800">{sekolah.password}. {sekolah.nama_sekolah} ({sekolah.kod_sekolah})</h2>
+              <p className="text-sm">{sekolah.kod_ppd} {sekolah.ppd} | Pass {sekolah.password}/369 | Pusat {sekolah.bil_pusat}</p>
+              <div className="mt-2 flex gap-2 flex-wrap">
+                {sekolah.senarai_pusat?.split(',').map((p:string)=><span key={p} className="px-2 py-1 bg-blue-100 rounded text-xs font-mono">{p.trim().toUpperCase()}</span>)}
               </div>
             </div>
-            <button onClick={()=>{setSekolah(null); setKod(''); setPass(''); setPusatList([]); setGuruList([])}} className="text-sm bg-red-50 text-red-600 px-4 py-2 rounded-lg border">Log Keluar</button>
+            <button onClick={()=>{setSekolah(null); setKod(''); setPass('');}} className="h-fit bg-red-50 text-red-600 px-3 py-1 rounded border text-sm">Keluar</button>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow border">
-              <h3 className="font-bold mb-3 text-[#0d47a1]">Senarai Pusat Peperiksaan ({pusatList.length}) - Kod Pusat UPPER BA, BK</h3>
-              <div className="overflow-auto">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="bg-white p-4 rounded-xl shadow border">
+              <h3 className="font-bold mb-2">Pusat ({pusatList.length})</h3>
               <table className="w-full text-sm">
-                <thead><tr className="text-left border-b bg-slate-50"><th className="p-2">No Pusat</th><th className="p-2">Nama Pusat</th><th className="p-2">Calon</th><th className="p-2">Kelas</th></tr></thead>
-                <tbody>{pusatList.map((p:any)=><tr key={p.no_pusat} className="border-b hover:bg-slate-50"><td className="p-2 font-mono font-bold">{p.no_pusat}</td><td className="p-2">{p.nama_pusat}</td><td className="p-2">{p.jumlah_calon || p.calon}</td><td className="p-2">{p.jumlah_kelas || p.bilik}</td></tr>)}</tbody>
+                <thead><tr className="border-b bg-gray-50"><th className="p-2 text-left">No</th><th className="p-2 text-left">Nama</th></tr></thead>
+                <tbody>{pusatList.map((p:any)=><tr key={p.no_pusat} className="border-b"><td className="p-2 font-mono">{p.no_pusat}</td><td className="p-2">{p.nama_pusat}</td></tr>)}</tbody>
               </table>
-              </div>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow border">
-              <h3 className="font-bold mb-3 text-[#0d47a1]">Senarai Guru {sekolah.kod_sekolah} ({guruList.length} orang)</h3>
-              <div className="max-h-[600px] overflow-auto">
+            <div className="bg-white p-4 rounded-xl shadow border">
+              <h3 className="font-bold mb-2">Guru ({guruList.length})</h3>
+              <div className="max-h-[500px] overflow-auto">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-white"><tr className="text-left border-b bg-slate-50"><th className="p-2">Nama Guru</th><th className="p-2">IC</th><th className="p-2">Gred</th></tr></thead>
-                  <tbody>{guruList.map((g:any)=><tr key={g.id} className="border-b hover:bg-slate-50"><td className="p-2">{g.nama_guru}</td><td className="p-2 font-mono text-xs">{g.ic_guru}</td><td className="p-2 text-xs">{g.data?.GRED || '-'} {g.data?.JAWATAN_HAKIKI || ''}</td></tr>)}</tbody>
+                  <thead><tr className="border-b bg-gray-50"><th className="p-2 text-left">Nama</th><th className="p-2 text-left">IC</th></tr></thead>
+                  <tbody>{guruList.map((g:any)=><tr key={g.id} className="border-b"><td className="p-2">{g.nama_guru}</td><td className="p-2 font-mono text-xs">{g.ic_guru}</td></tr>)}</tbody>
                 </table>
               </div>
             </div>
@@ -98,34 +103,21 @@ export default function SupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f7fa] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border p-8">
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-yellow-400 rounded-full mx-auto mb-3 flex items-center justify-center font-bold text-xs">JATA</div>
-          <h1 className="text-sm font-extrabold text-[#0d47a1]">JABATAN PENDIDIKAN NEGERI SELANGOR</h1>
-          <p className="text-lg font-bold mt-3 text-[#0d47a1]">LOG MASUK SUP</p>
-          <p className="text-xs text-slate-500 mt-1">Guna Kod Sekolah + Password Lama 1 hingga 369<br/>BA Klang 1-49 hingga BK Petaling Utama 334-369</p>
-        </div>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Kod Sekolah (Contoh BEA0091)</label>
-            <input value={kod} onChange={e=>setKod(e.target.value.toUpperCase())} placeholder="BEA0091" className="w-full mt-1 p-3 border rounded-lg font-mono uppercase" required />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Kata Laluan / Password (1-369)</label>
-            <input value={pass} onChange={e=>setPass(e.target.value)} placeholder="1" type="text" className="w-full mt-1 p-3 border rounded-lg" required />
-          </div>
-          {err && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">{err}</p>}
-          <button id="loginBtn" disabled={loading} className="w-full bg-[#0d47a1] text-white p-3 rounded-lg font-bold hover:bg-blue-900 disabled:opacity-50">{loading?'Menyemak 369 sekolah...':'Log Masuk SUP'}</button>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-white rounded-xl shadow border p-6">
+        <h1 className="text-center font-bold text-blue-800">LOG MASUK SUP</h1>
+        <p className="text-center text-xs text-gray-500 mb-4">Kod Sekolah + Password 1 hingga 369</p>
+        <form onSubmit={handleLogin} className="space-y-3">
+          <input value={kod} onChange={e=>setKod(e.target.value.toUpperCase())} placeholder="Kod Sekolah BEA0091" className="w-full p-3 border rounded uppercase font-mono" required />
+          <input value={pass} onChange={e=>setPass(e.target.value)} placeholder="Password 1" className="w-full p-3 border rounded" required />
+          {err && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{err}</p>}
+          <button disabled={loading} className="w-full bg-blue-800 text-white p-3 rounded font-bold">{loading?'Loading...':'Login'}</button>
         </form>
-        <div className="mt-6 p-3 bg-slate-50 rounded-lg text-xs border">
-          <p className="font-bold mb-1">Demo Login:</p>
-          <button onClick={()=>{setKod('BEA0091'); setPass('1')}} className="w-full text-left p-2 hover:bg-white rounded border mb-1">BEA0091 / 1 = SMK RAJA MAHADI</button>
-          <button onClick={()=>{setKod('ZZZ0022'); setPass('369')}} className="w-full text-left p-2 hover:bg-white rounded border">ZZZ0022 / 369 = SM BESTARI ASIA PACIFIC (Last)</button>
+        <div className="mt-4 text-xs bg-gray-50 p-2 rounded border">
+          <button onClick={()=>{setKod('BEA0091'); setPass('1')}} className="w-full text-left p-2 bg-white rounded border mb-1">BEA0091 / 1</button>
+          <button onClick={()=>{setKod('ZZZ0022'); setPass('369')}} className="w-full text-left p-2 bg-white rounded border">ZZZ0022 / 369</button>
         </div>
-        <div className="mt-3 text-center">
-          <a href="/" className="text-xs text-blue-600 hover:underline">Kembali Home</a>
-        </div>
+        <a href="/" className="block text-center text-xs text-blue-600 mt-3">Kembali Home</a>
       </div>
     </div>
   )
