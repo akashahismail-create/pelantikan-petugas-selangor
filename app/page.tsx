@@ -37,6 +37,11 @@ export default function Home() {
     setLoading(false)
   }
 
+  const handleSelectSekolah = (s: any) => {
+    // Bila dah pilih sekolah, terus pergi page SUP dengan kod & password auto isi
+    window.location.href = `/sup?kod=${s.kod_sekolah}&p=${s.password}`
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#f5f7fa', fontFamily: 'Arial, sans-serif' }}>
       <div style={{ background: '#0d47a1', color: 'white', padding: 24, textAlign: 'center' }}>
@@ -47,8 +52,8 @@ export default function Home() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginTop: 48, flexWrap: 'wrap', padding: '0 16px' }}>
-        <button onClick={() => window.location.href='/sup'} style={{ background: '#1976d2', color: 'white', padding: '24px 48px', borderRadius: 16, fontWeight: 900, fontSize: 20, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }}>
-          SUP<br/><span style={{ fontSize: 10, fontWeight: 400 }}>369 Sekolah</span>
+        <button onClick={() => setShowPPD(true)} style={{ background: '#1976d2', color: 'white', padding: '24px 48px', borderRadius: 16, fontWeight: 900, fontSize: 20, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }}>
+          SUP<br/><span style={{ fontSize: 10, fontWeight: 400 }}>369 Sekolah - Klik Pilih Daerah</span>
         </button>
         <button onClick={() => setShowPPD(true)} style={{ background: '#1976d2', color: 'white', padding: '24px 48px', borderRadius: 16, fontWeight: 900, fontSize: 20, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }}>
           PPD<br/><span style={{ fontSize: 10, fontWeight: 400 }}>10 PPD</span>
@@ -58,19 +63,20 @@ export default function Home() {
         </button>
       </div>
 
-      <div style={{ maxWidth: 700, margin: '40px auto 0 auto', background: 'white', padding: 16, borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontSize: 12, border: '1px solid #e2e8f0' }}>
-        <p style={{ fontWeight: 900, margin: '0 0 6px 0' }}>Info Password SUP (column password lama):</p>
-        <p style={{ margin: 0, lineHeight: 1.5, color: '#475569' }}>BA Klang = 1-49 (BEA0091 SMK RAJA MAHADI = 1), BK Petaling Utama = 334-369 (ZZZ0022 SM BESTARI ASIA PACIFIC = 369). Kod pusat dah UPPER BA049 etc.</p>
+      <div style={{ maxWidth: 700, margin: '40px auto 0 auto', background: 'white', padding: 16, borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontSize: 12, border: '1px solid #e2e8f0', textAlign: 'center' }}>
+        <p style={{ fontWeight: 900, margin: '0 0 6px 0' }}>Flow Baru SUP:</p>
+        <p style={{ margin: 0, lineHeight: 1.6, color: '#475569' }}>Klik SUP → Popup Pilih Daerah (BA Klang 1-49 ... BK Petaling Utama 334-369) → Scroll → Pilih Daerah → Popup Sekolah → Scroll → Pilih Sekolah (BEA0091 etc) → Auto Bawa ke Page SUP dengan Kod & Password Dah Siap Isi → Tekan Log Masuk</p>
       </div>
 
       {showPPD && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16 }} onClick={() => setShowPPD(false)}>
-          <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 420 }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h2 style={{ fontWeight: 900, color: '#1e40af', margin: 0, fontSize: 14 }}>PILIH DAERAH / PPD (BA-&gt;BK)</h2>
+              <h2 style={{ fontWeight: 900, color: '#1e40af', margin: 0, fontSize: 14 }}>STEP 1: PILIH DAERAH / PPD (BA-&gt;BK)</h2>
               <button onClick={() => setShowPPD(false)} style={{ fontWeight: 900, border: '1px solid #e2e8f0', background: '#f8fafc', padding: '4px 10px', borderRadius: 6, cursor: 'pointer' }}>X</button>
             </div>
-            <div style={{ maxHeight: 400, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
+            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Scroll pilih daerah, contoh BA Klang Password 1-49 ada BEA0091 SMK RAJA MAHADI</div>
+            <div style={{ maxHeight: 420, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
               {PPD_LIST.map(ppd => (
                 <button key={ppd.kod} onClick={() => handleSelectPPD(ppd)} style={{ width: '100%', textAlign: 'left', padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontWeight: 'bold', fontSize: 13 }}>{ppd.kod} - {ppd.nama}</span>
@@ -84,14 +90,15 @@ export default function Home() {
 
       {showSekolah && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16 }} onClick={() => setShowSekolah(false)}>
-          <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 500 }} onClick={e => e.stopPropagation()}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 520 }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h2 style={{ fontWeight: 900, color: '#1e40af', margin: 0, fontSize: 13 }}>SEKOLAH - {selectedPPD?.nama} ({selectedPPD?.kod}) Password {selectedPPD?.range}</h2>
+              <h2 style={{ fontWeight: 900, color: '#1e40af', margin: 0, fontSize: 13 }}>STEP 2: PILIH SEKOLAH - {selectedPPD?.nama} ({selectedPPD?.kod}) Password {selectedPPD?.range}</h2>
               <button onClick={() => setShowSekolah(false)} style={{ fontWeight: 900, border: '1px solid #e2e8f0', background: '#f8fafc', padding: '4px 10px', borderRadius: 6, cursor: 'pointer' }}>X</button>
             </div>
-            <div style={{ maxHeight: 400, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
+            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Scroll pilih sekolah, klik akan auto isi Kod Sekolah & Password di page SUP</div>
+            <div style={{ maxHeight: 420, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
               {loading ? <p>Loading 369 sekolah...</p> : sekolahList.map((s) => (
-                <button key={s.id} onClick={() => window.location.href=`/sup?kod=${s.kod_sekolah}&p=${s.password}`} style={{ width: '100%', textAlign: 'left', padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: 12 }}>
+                <button key={s.id} onClick={() => handleSelectSekolah(s)} style={{ width: '100%', textAlign: 'left', padding: 12, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: 12 }}>
                   <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{s.password}. {s.kod_sekolah}</span> - {s.nama_sekolah}<br/><span style={{ fontSize: 10, color: '#64748b' }}>{s.bil_pusat} pusat: {s.senarai_pusat}</span>
                 </button>
               ))}
