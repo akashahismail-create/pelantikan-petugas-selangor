@@ -1,5 +1,6 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -7,7 +8,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-export default function SupPage() {
+function SupContent() {
+  const searchParams = useSearchParams()
   const [kod, setKod] = useState('BEA0091')
   const [pass, setPass] = useState('1')
   const [sekolah, setSekolah] = useState<any>(null)
@@ -15,6 +17,13 @@ export default function SupPage() {
   const [guruList, setGuruList] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
+
+  useEffect(() => {
+    const k = searchParams.get('kod')
+    const p = searchParams.get('p')
+    if (k) setKod(k.toUpperCase())
+    if (p) setPass(p)
+  }, [searchParams])
 
   async function handleLogin(e: any) {
     e.preventDefault()
@@ -58,7 +67,6 @@ export default function SupPage() {
     }
   }
 
-  // VIEW LEPAS LOGIN - CANTIK TANPA TAILWIND
   if (sekolah) {
     return (
       <div style={{ minHeight: '100vh', background: '#f1f5f9', padding: 20, fontFamily: 'Arial' }}>
@@ -79,53 +87,22 @@ export default function SupPage() {
                 ))}
               </div>
             </div>
-            <button
-              onClick={() => setSekolah(null)}
-              style={{ height: 36, background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '0 16px', borderRadius: 8, fontWeight: 'bold', cursor: 'pointer' }}
-            >
-              Keluar
-            </button>
+            <button onClick={() => setSekolah(null)} style={{ height: 36, background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '0 16px', borderRadius: 8, fontWeight: 'bold', cursor: 'pointer' }}>Keluar</button>
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 20 }}>
             <div style={{ background: 'white', padding: 16, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
               <h3 style={{ margin: '0 0 12px 0', color: '#0d47a1', fontWeight: 'bold' }}>Senarai Pusat ({pusatList.length})</h3>
               <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', textAlign: 'left' }}>
-                    <th style={{ padding: 8, borderBottom: '1px solid #e2e8f0' }}>No Pusat</th>
-                    <th style={{ padding: 8, borderBottom: '1px solid #e2e8f0' }}>Nama Pusat</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pusatList.map((p: any) => (
-                    <tr key={p.no_pusat} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: 8, fontFamily: 'monospace', fontWeight: 'bold' }}>{p.no_pusat}</td>
-                      <td style={{ padding: 8 }}>{p.nama_pusat}</td>
-                    </tr>
-                  ))}
-                </tbody>
+                <thead><tr style={{ background: '#f8fafc', textAlign: 'left' }}><th style={{ padding: 8, borderBottom: '1px solid #e2e8f0' }}>No Pusat</th><th style={{ padding: 8, borderBottom: '1px solid #e2e8f0' }}>Nama Pusat</th></tr></thead>
+                <tbody>{pusatList.map((p: any) => (<tr key={p.no_pusat} style={{ borderBottom: '1px solid #f1f5f9' }}><td style={{ padding: 8, fontFamily: 'monospace', fontWeight: 'bold' }}>{p.no_pusat}</td><td style={{ padding: 8 }}>{p.nama_pusat}</td></tr>))}</tbody>
               </table>
             </div>
-
             <div style={{ background: 'white', padding: 16, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
               <h3 style={{ margin: '0 0 12px 0', color: '#0d47a1', fontWeight: 'bold' }}>Senarai Guru ({guruList.length})</h3>
               <div style={{ maxHeight: 500, overflow: 'auto' }}>
                 <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: '#f8fafc', textAlign: 'left' }}>
-                      <th style={{ padding: 8, borderBottom: '1px solid #e2e8f0' }}>Nama Guru</th>
-                      <th style={{ padding: 8, borderBottom: '1px solid #e2e8f0' }}>IC</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {guruList.map((g: any) => (
-                      <tr key={g.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: 8 }}>{g.nama_guru}</td>
-                        <td style={{ padding: 8, fontFamily: 'monospace', fontSize: 11 }}>{g.ic_guru}</td>
-                      </tr>
-                    ))}
-                  </tbody>
+                  <thead><tr style={{ background: '#f8fafc', textAlign: 'left' }}><th style={{ padding: 8, borderBottom: '1px solid #e2e8f0' }}>Nama Guru</th><th style={{ padding: 8, borderBottom: '1px solid #e2e8f0' }}>IC</th></tr></thead>
+                  <tbody>{guruList.map((g: any) => (<tr key={g.id} style={{ borderBottom: '1px solid #f1f5f9' }}><td style={{ padding: 8 }}>{g.nama_guru}</td><td style={{ padding: 8, fontFamily: 'monospace', fontSize: 11 }}>{g.ic_guru}</td></tr>))}</tbody>
                 </table>
               </div>
             </div>
@@ -135,23 +112,16 @@ export default function SupPage() {
     )
   }
 
-  // VIEW LOGIN - CANTIK TANPA TAILWIND - PAKAI INLINE STYLE
   return (
     <div style={{ minHeight: '100vh', background: '#eef2f7', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, fontFamily: 'Arial, sans-serif' }}>
       <div style={{ width: '100%', maxWidth: 420, background: 'white', borderRadius: 20, boxShadow: '0 20px 40px rgba(0,0,0,0.15)', border: '1px solid #e2e8f0', padding: 32 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ width: 56, height: 56, background: '#facc15', borderRadius: '50%', margin: '0 auto 12px auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 10, border: '2px solid #ca8a04' }}>
-            JATA
-          </div>
+          <div style={{ width: 56, height: 56, background: '#facc15', borderRadius: '50%', margin: '0 auto 12px auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 10, border: '2px solid #ca8a04' }}>JATA</div>
           <h1 style={{ fontSize: 12, fontWeight: 900, color: '#0d47a1', margin: 0 }}>JABATAN PENDIDIKAN NEGERI SELANGOR</h1>
           <h2 style={{ fontSize: 20, fontWeight: 900, color: '#0d47a1', margin: '16px 0 0 0' }}>LOG MASUK SUP</h2>
-          <p style={{ fontSize: 11, color: '#64748b', marginTop: 6, lineHeight: 1.4 }}>
-            Guna Kod Sekolah tambah Password Lama 1 hingga 369<br />
-            BA Klang 1 hingga 49 hingga BK Petaling Utama 334 hingga 369<br />
-            Kod Pusat dah fix UPPER BA049, BK550
-          </p>
+          <p style={{ fontSize: 11, color: '#64748b', marginTop: 6, lineHeight: 1.4 }}>Guna Kod Sekolah tambah Password Lama 1 hingga 369<br/>BA Klang 1 hingga 49 hingga BK Petaling Utama 334 hingga 369<br/>Kod Pusat dah fix UPPER BA049, BK550</p>
+          {searchParams.get('kod') && <div style={{ marginTop: 10, background: '#dcfce7', color: '#166534', padding: 8, borderRadius: 8, fontSize: 11, border: '1px solid #bbf7d0' }}>✓ Dipilih dari Landing: {searchParams.get('kod')} / {searchParams.get('p')} - Tekan Log Masuk</div>}
         </div>
-
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
             <label style={{ fontSize: 12, fontWeight: 'bold', color: '#334155' }}>Kod Sekolah (Contoh BEA0091)</label>
@@ -162,22 +132,24 @@ export default function SupPage() {
             <input value={pass} onChange={e => setPass(e.target.value)} placeholder="1" style={{ width: '100%', marginTop: 4, padding: 12, border: '1px solid #cbd5e1', borderRadius: 12, boxSizing: 'border-box' }} required />
           </div>
           {err && <div style={{ fontSize: 12, color: '#b91c1c', background: '#fef2f2', padding: 10, borderRadius: 10, border: '1px solid #fecaca' }}>{err}</div>}
-          <button disabled={loading} style={{ width: '100%', background: '#0d47a1', color: 'white', padding: 14, borderRadius: 12, fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>
-            {loading ? 'Menyemak...' : 'Log Masuk SUP'}
-          </button>
+          <button disabled={loading} style={{ width: '100%', background: '#0d47a1', color: 'white', padding: 14, borderRadius: 12, fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>{loading ? 'Menyemak...' : 'Log Masuk SUP'}</button>
         </form>
-
         <div style={{ marginTop: 20, padding: 12, background: '#f8fafc', borderRadius: 12, fontSize: 11, border: '1px solid #e2e8f0' }}>
           <p style={{ fontWeight: 'bold', margin: '0 0 8px 0' }}>Demo Login:</p>
           <button onClick={() => { setKod('BEA0091'); setPass('1'); }} style={{ width: '100%', textAlign: 'left', padding: 10, background: 'white', borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 6, fontFamily: 'monospace', cursor: 'pointer' }}>BEA0091 / 1 - SMK RAJA MAHADI</button>
           <button onClick={() => { setKod('BGAJ003'); setPass('360'); }} style={{ width: '100%', textAlign: 'left', padding: 10, background: 'white', borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 6, fontFamily: 'monospace', cursor: 'pointer' }}>BGAJ003 / 360 - SRI BESTARI BK550</button>
           <button onClick={() => { setKod('ZZZ0022'); setPass('369'); }} style={{ width: '100%', textAlign: 'left', padding: 10, background: 'white', borderRadius: 8, border: '1px solid #e2e8f0', fontFamily: 'monospace', cursor: 'pointer' }}>ZZZ0022 / 369 - BESTARI ASIA PACIFIC</button>
         </div>
-
-        <div style={{ marginTop: 16, textAlign: 'center' }}>
-          <a href="/" style={{ fontSize: 12, color: '#1d4ed8', fontWeight: 'bold' }}>Kembali Home</a>
-        </div>
+        <div style={{ marginTop: 16, textAlign: 'center' }}><a href="/" style={{ fontSize: 12, color: '#1d4ed8', fontWeight: 'bold' }}>Kembali Home</a></div>
       </div>
     </div>
+  )
+}
+
+export default function SupPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 20 }}>Loading...</div>}>
+      <SupContent />
+    </Suspense>
   )
 }
