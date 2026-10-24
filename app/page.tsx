@@ -1,86 +1,132 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 
-const PPD_LIST = [
-  { kod: 'BA', nama: 'KLANG', count: 49, range: '1-49' },
-  { kod: 'BB', nama: 'KUALA LANGAT', count: 23, range: '50-72' },
-  { kod: 'BC', nama: 'KUALA SELANGOR', count: 27, range: '73-99' },
-  { kod: 'BD', nama: 'HULU LANGAT', count: 64, range: '100-163' },
-  { kod: 'BE', nama: 'HULU SELANGOR', count: 22, range: '164-185' },
-  { kod: 'BF', nama: 'SABAK BERNAM', count: 21, range: '186-206' },
-  { kod: 'BG', nama: 'GOMBAK', count: 46, range: '207-252' },
-  { kod: 'BH', nama: 'PETALING PERDANA', count: 62, range: '253-314' },
-  { kod: 'BJ', nama: 'SEPANG', count: 19, range: '315-333' },
-  { kod: 'BK', nama: 'PETALING UTAMA', count: 36, range: '334-369' },
-]
-
-export default function Home() {
-  const [showPPD, setShowPPD] = useState(false)
-  const [showSekolah, setShowSekolah] = useState(false)
-  const [selectedPPD, setSelectedPPD] = useState<any>(null)
-  const [sekolahList, setSekolahList] = useState<any[]>([])
+export default function SupPage() {
+  const [kod, setKod] = useState('')
+  const [pass, setPass] = useState('')
+  const [sekolah, setSekolah] = useState<any>(null)
+  const [pusatList, setPusatList] = useState<any[]>([])
+  const [guruList, setGuruList] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState('')
 
-  const handleSelectPPD = async (ppd: any) => {
-    setSelectedPPD(ppd)
-    setShowPPD(false)
-    setLoading(true)
-    setShowSekolah(true)
-    const { data } = await supabase.from('sekolah_master').select('*').eq('kod_ppd', ppd.kod).order('password', {ascending: true})
-    setSekolahList(data || [])
-    setLoading(false)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const k = params.get('kod')
+    const p = params.get('p')
+    if(k && p){ setKod(k); setPass(p) }
+  }, [])
+
+  async function handleLogin(e: any) {
+    if(e) e.preventDefault()
+    setLoading(true); setErr('')
+    try {
+      const kodUpper = kod.trim().toUpperCase()
+      const { data, error } = await supabase
+        .from('sekolah_master')
+        .select('*')
+        .eq('kod_sekolah', kodUpper)
+        .eq('password', pass.toString().trim())
+        .single()
+      
+      if (error || !data) throw new Error('Kod ' + kodUpper + ' / Password ' + pass + ' salah. Password = 1 hingga 369 BA ke BK. Contoh BEA0091=1')
+      
+      setSekolah(data)
+
+      if (data.senarai_pusat) {
+        const list = data.senarai_pusat.split(',').map((s:string)=>s.trim().toUpperCase()).filter(Boolean)
+        const { data: pusatData } = await supabase
+          .from('pusat_master')
+          .select('*')
+          .in('no_pusat', list)
+        setPusatList(pusatData || [])
+      }
+
+      const { data: guruData } = await supabase
+        .from('guru_master')
+        .select('*')
+        .eq('kod_sekolah', kodUpper)
+        .order('nama_guru')
+      setGuruList(guruData || [])
+
+    } catch (e:any) {
+      setErr(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (sekolah) {
+    return (
+      <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="bg-white p-6 rounded-xl shadow border flex justify-between items-start">
+            <div>
+              <h2 className="text-xl font-bold text-[#0d47a1]">{sekolah.password}. {sekolah.nama_sekolah} ({sekolah.kod_sekolah})</h2>
+              <p className="text-sm text-slate-600">{sekolah.kod_ppd} - {sekolah.ppd} | Password: {sekolah.password} / 369 (BA 1 hingga BK 369) | Bil Pusat: {sekolah.bil_pusat}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {sekolah.senarai_pusat?.split(',').map((p:string)=><span key={p} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-mono font-bold">{p.trim().toUpperCase()}</span>)}
+              </div>
+            </div>
+            <button onClick={()=>{setSekolah(null); setKod(''); setPass(''); setPusatList([]); setGuruList([])}} className="text-sm bg-red-50 text-red-600 px-4 py-2 rounded-lg border">Log Keluar</button>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-xl shadow border">
+              <h3 className="font-bold mb-3 text-[#0d47a1]">Senarai Pusat Peperiksaan ({pusatList.length}) - Kod Pusat UPPER BA, BK</h3>
+              <div className="overflow-auto">
+              <table className="w-full text-sm">
+                <thead><tr className="text-left border-b bg-slate-50"><th className="p-2">No Pusat</th><th className="p-2">Nama Pusat</th><th className="p-2">Calon</th><th className="p-2">Kelas</th></tr></thead>
+                <tbody>{pusatList.map((p:any)=><tr key={p.no_pusat} className="border-b hover:bg-slate-50"><td className="p-2 font-mono font-bold">{p.no_pusat}</td><td className="p-2">{p.nama_pusat}</td><td className="p-2">{p.jumlah_calon || p.calon}</td><td className="p-2">{p.jumlah_kelas || p.bilik}</td></tr>)}</tbody>
+              </table>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow border">
+              <h3 className="font-bold mb-3 text-[#0d47a1]">Senarai Guru {sekolah.kod_sekolah} ({guruList.length} orang)</h3>
+              <div className="max-h-[600px] overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-white"><tr className="text-left border-b bg-slate-50"><th className="p-2">Nama Guru</th><th className="p-2">IC</th><th className="p-2">Gred</th></tr></thead>
+                  <tbody>{guruList.map((g:any)=><tr key={g.id} className="border-b hover:bg-slate-50"><td className="p-2">{g.nama_guru}</td><td className="p-2 font-mono text-xs">{g.ic_guru}</td><td className="p-2 text-xs">{g.data?.GRED || '-'} {g.data?.JAWATAN_HAKIKI || ''}</td></tr>)}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f7fa]">
-      <div className="bg-[#0d47a1] text-white p-6 text-center">
-        <div className="w-20 h-20 bg-yellow-400 rounded-full mx-auto mb-3 flex items-center justify-center text-black font-bold text-xs">JATA NEGARA</div>
-        <h1 className="text-2xl font-bold">JABATAN PENDIDIKAN NEGERI SELANGOR</h1>
-        <p className="text-sm opacity-90">KEMENTERIAN PENDIDIKAN MALAYSIA</p>
-        <div className="bg-white text-[#0d47a1] mt-4 py-2 font-bold tracking-wider">SISTEM PELANTIKAN PETUGAS SPM 2026 - Password 1-369 (BA-&gt;BK)</div>
-      </div>
-
-      <div className="flex justify-center gap-6 mt-12 flex-wrap px-4">
-        <button onClick={() => window.location.href='/sup'} className="bg-[#1976d2] hover:bg-blue-800 text-white px-12 py-6 rounded-2xl font-bold text-xl shadow-lg transition">SUP<br/><span className="text-xs font-normal">369 Sekolah</span></button>
-        <button onClick={() => setShowPPD(true)} className="bg-[#1976d2] hover:bg-blue-800 text-white px-12 py-6 rounded-2xl font-bold text-xl shadow-lg transition">PPD<br/><span className="text-xs font-normal">10 PPD</span></button>
-        <button onClick={() => window.location.href='/jpn'} className="bg-[#1976d2] hover:bg-blue-800 text-white px-12 py-6 rounded-2xl font-bold text-xl shadow-lg transition">JPN<br/><span className="text-xs font-normal">Admin</span></button>
-      </div>
-
-      <div className="max-w-3xl mx-auto mt-10 bg-white p-4 rounded-xl shadow text-sm">
-        <p className="font-bold">Info Password SUP (column password lama):</p>
-        <p>BA Klang = 1-49 (BEA0091 SMK RAJA MAHADI = 1), BK Petaling Utama = 334-369 (ZZZ0022 SM BESTARI ASIA PACIFIC = 369). Kod pusat dah UPPER BA049 etc.</p>
-      </div>
-
-      {showPPD && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPPD(false)}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4"><h2 className="font-bold text-blue-800">PILIH DAERAH / PPD (BA-&gt;BK)</h2><button onClick={() => setShowPPD(false)} className="font-bold">X</button></div>
-            <div className="max-h-[400px] overflow-y-auto space-y-2 pr-1">
-              {PPD_LIST.map(ppd => (
-                <button key={ppd.kod} onClick={() => handleSelectPPD(ppd)} className="w-full text-left p-3 bg-gray-50 hover:bg-blue-50 rounded-lg border flex justify-between">
-                  <span>{ppd.kod} - {ppd.nama}</span><span className="text-xs bg-blue-100 px-2 py-1 rounded">{ppd.range} ({ppd.count})</span>
-                </button>
-              ))}
-            </div>
-          </div>
+    <div className="min-h-screen bg-[#f5f7fa] flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border p-8">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-yellow-400 rounded-full mx-auto mb-3 flex items-center justify-center font-bold text-xs">JATA</div>
+          <h1 className="text-sm font-extrabold text-[#0d47a1]">JABATAN PENDIDIKAN NEGERI SELANGOR</h1>
+          <p className="text-lg font-bold mt-3 text-[#0d47a1]">LOG MASUK SUP</p>
+          <p className="text-xs text-slate-500 mt-1">Guna Kod Sekolah + Password Lama 1 hingga 369<br/>BA Klang 1-49 hingga BK Petaling Utama 334-369</p>
         </div>
-      )}
-
-      {showSekolah && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowSekolah(false)}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4"><h2 className="font-bold text-blue-800">SEKOLAH - {selectedPPD?.nama} ({selectedPPD?.kod}) Password {selectedPPD?.range}</h2><button onClick={() => setShowSekolah(false)}>X</button></div>
-            <div className="max-h-[400px] overflow-y-auto space-y-2 pr-1">
-              {loading ? <p>Loading 369 sekolah...</p> : sekolahList.map((s) => (
-                <button key={s.id} onClick={() => window.location.href=`/sup?kod=${s.kod_sekolah}&p=${s.password}`} className="w-full text-left p-3 bg-gray-50 hover:bg-blue-50 rounded-lg border text-sm">
-                  <span className="font-mono font-bold">{s.password}. {s.kod_sekolah}</span> - {s.nama_sekolah}<br/><span className="text-xs text-slate-500">{s.bil_pusat} pusat: {s.senarai_pusat}</span>
-                </button>
-              ))}
-            </div>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Kod Sekolah (Contoh BEA0091)</label>
+            <input value={kod} onChange={e=>setKod(e.target.value.toUpperCase())} placeholder="BEA0091" className="w-full mt-1 p-3 border rounded-lg font-mono uppercase" required />
           </div>
+          <div>
+            <label className="text-sm font-medium">Kata Laluan / Password (1-369)</label>
+            <input value={pass} onChange={e=>setPass(e.target.value)} placeholder="1" type="text" className="w-full mt-1 p-3 border rounded-lg" required />
+          </div>
+          {err && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">{err}</p>}
+          <button id="loginBtn" disabled={loading} className="w-full bg-[#0d47a1] text-white p-3 rounded-lg font-bold hover:bg-blue-900 disabled:opacity-50">{loading?'Menyemak 369 sekolah...':'Log Masuk SUP'}</button>
+        </form>
+        <div className="mt-6 p-3 bg-slate-50 rounded-lg text-xs border">
+          <p className="font-bold mb-1">Demo Login:</p>
+          <button onClick={()=>{setKod('BEA0091'); setPass('1')}} className="w-full text-left p-2 hover:bg-white rounded border mb-1">BEA0091 / 1 = SMK RAJA MAHADI</button>
+          <button onClick={()=>{setKod('ZZZ0022'); setPass('369')}} className="w-full text-left p-2 hover:bg-white rounded border">ZZZ0022 / 369 = SM BESTARI ASIA PACIFIC (Last)</button>
         </div>
-      )}
+        <div className="mt-3 text-center">
+          <a href="/" className="text-xs text-blue-600 hover:underline">Kembali Home</a>
+        </div>
+      </div>
     </div>
   )
 }
